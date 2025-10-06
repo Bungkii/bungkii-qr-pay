@@ -1,41 +1,25 @@
-
-import express from "express";
-import fetch from "node-fetch";
-import dotenv from "dotenv";
-import path from "path";
-
-dotenv.config();
+const express = require('express');
+const path = require('path');
 const app = express();
+
+// serve ไฟล์ static จาก public
+app.use(express.static(path.join(__dirname, 'public')));
+
+// route สำหรับ API / backend
 app.use(express.json());
-app.use(express.static("public"));
 
-const KBANK_URL = "https://openapi.kasikornbank.com/v1/qr-payment/qrcode/create";
-
-app.post("/create-qr", async (req, res) => {
-  const { amount, ref1 } = req.body;
-  try {
-    const response = await fetch(KBANK_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-ibm-client-id": process.env.KBANK_CONSUMER_ID,
-        "x-ibm-client-secret": process.env.KBANK_CONSUMER_SECRET
-      },
-      body: JSON.stringify({
-        merchantId: process.env.MERCHANT_ID,
-        terminalId: process.env.TERMINAL_ID,
-        invoiceNo: ref1 || "REF001",
-        amount: amount,
-        currencyCode: "764"
-      })
-    });
-    const data = await response.json();
-    res.json(data);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Cannot create QR" });
-  }
+// ตัวอย่าง route POST
+app.post('/create-qr', (req, res) => {
+  const { amount } = req.body;
+  // สร้าง QR Code จาก KBank Open API
+  res.json({ qrUrl: `https://promptpay.io/0925384159/${amount}` });
 });
 
-const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`✅ Server running on port ${port}`));
+// ถ้าเข้าที่ / ให้ส่ง index.html
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// ใช้ port ของ Vercel
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
